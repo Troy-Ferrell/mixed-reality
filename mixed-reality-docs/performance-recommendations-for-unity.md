@@ -19,6 +19,7 @@ It is also highly advisable that developers review the [recommended environment 
 Unity provides the **[Unity Profiler](https://docs.unity3d.com/Manual/Profiler.html)** built-in which is a great resource to gather valuable performance insights for your particular app. Although one can run the profiler in-editor, these metrics do not represent the true runtime environment and thus, results from this should be used cautiously. It is recommended to remotely profile your application while running on device for most accurate and actionable insights. Further, Unity's [Frame Debugger](https://docs.unity3d.com/Manual/FrameDebugger.html)  is also a very powerful and insight tool to utilize.
 
 Unity provides great documentation for:
+
 1) How to connect the [Unity profiler to UWP applications remotely](https://docs.unity3d.com/Manual/windowsstore-profiler.html)
 2) How to effectively [diagnose performance problems with the Unity Profiler](https://unity3d.com/learn/tutorials/temas/performance-optimization/diagnosing-performance-problems-using-profiler-window)
 
@@ -31,7 +32,7 @@ Unity provides great documentation for:
 
 The content below covers more in-depth performance practices, especially targeted for Unity & C# development.
 
-#### Cache references
+### Cache references
 
 It is best practice to cache references to all relevant components and GameObjects at initialization. This is because repeating function calls such as *[GetComponent\<T>()](https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html)* are significantly more expensive relative to the memory cost to store a pointer. This also applies to to the very, regularly used [Camera.main](https://docs.unity3d.com/ScriptReference/Camera-main.html). *Camera.main* actually just uses *[FindGameObjectsWithTag()](https://docs.unity3d.com/ScriptReference/GameObject.FindGameObjectsWithTag.html)* underneath which expensively searches your scene graph for a camera object with the *"MainCamera"* tag.
 
@@ -67,7 +68,7 @@ public class ExampleClass : MonoBehaviour
 }
 ```
 
->[!NOTE] 
+>[!NOTE]
 > Avoid GetComponent(string) <br/>
 > When using *[GetComponent()](https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html)*, there are a handful of different overloads. It is important to always use the Type based implementations and never the string-based searching overload. Searching by string in your scene is significantly more costly than searching by Type. <br/>
 > (Good) Component GetComponent(Type type) <br/>
@@ -96,14 +97,16 @@ public class ExampleClass : MonoBehaviour
 
     Certain Unity APIs, although useful, can be very expensive to execute. Most of these involve searching your entire scene graph for some matching list of GameObjects. These operations can generally be avoided by caching references or implementing a manager component for the GameObjects in question to track the references at runtime.
 
-        GameObject.SendMessage()
-        GameObject.BroadcastMessage()
-        UnityEngine.Object.Find()
-        UnityEngine.Object.FindWithTag()
-        UnityEngine.Object.FindObjectOfType()
-        UnityEngine.Object.FindObjectsOfType()
-        UnityEngine.Object.FindGameObjectsWithTag()
-        UnityEngine.Object.FindGameObjectsWithTag()
+    ```csharp
+    GameObject.SendMessage()
+    GameObject.BroadcastMessage()
+    UnityEngine.Object.Find()
+    UnityEngine.Object.FindWithTag()
+    UnityEngine.Object.FindObjectOfType()
+    UnityEngine.Object.FindObjectsOfType()
+    UnityEngine.Object.FindGameObjectsWithTag()
+    UnityEngine.Object.FindGameObjectsWithTag()
+    ```
 
 >[!NOTE]
 > *[SendMessage()](https://docs.unity3d.com/ScriptReference/GameObject.SendMessage.html)* and *[BroadcastMessage()](https://docs.unity3d.com/ScriptReference/GameObject.BroadcastMessage.html)* should be eliminated at all costs. These functions can be on the order of 1000x slower than direct function calls.
@@ -120,14 +123,14 @@ Any repeating Unity callback functions (i.e Update) that are executed many times
 
     Although the code below may seem innocent to leave in your application, especially since every Unity script auto-initializes with this code block, these empty callbacks can actually become very expensive. Unity operates back and forth over an unmanaged/managed code boundary, between UnityEngine code and your application code. Context switching over this bridge is fairly expensive even if there is nothing to execute. This becomes especially problematic if your app has 100's of GameObjects with components that have empty repeating Unity callbacks.
 
-    ```CS
+    ```csharp
     void Update()
     {
     }
     ```
 
 >[!NOTE]
-> Update() is the most common manifestation of this performance issue but other repeating Unity callbacks such as the following can be equally as bad if not worse: FixedUpdate(), LateUpdate(), OnPostRender", OnPreRender(), OnRenderImage(), etc. 
+> Update() is the most common manifestation of this performance issue but other repeating Unity callbacks such as the following can be equally as bad if not worse: FixedUpdate(), LateUpdate(), OnPostRender", OnPreRender(), OnRenderImage(), etc.
 
 2) **Operations to favor running once per frame**
 
@@ -135,16 +138,22 @@ Any repeating Unity callback functions (i.e Update) that are executed many times
 
     a) Generally it is good practice to have a dedicated Singleton class or service to handle your gaze Raycast into the scene and then re-use this result in all other scene components, instead of making repeated and essentially identical Raycast operations by each component. Of course, some applications may require raycasts from different origins or against different [LayerMasks](https://docs.unity3d.com/ScriptReference/LayerMask.html).
 
-        UnityEngine.Physics.Raycast()
-        UnityEngine.Physics.RaycastAll()
+    ```csharp
+    UnityEngine.Physics.Raycast()
+    UnityEngine.Physics.RaycastAll()
+    ```
 
     b) Avoid GetComponent() operations in repeated Unity callbacks like Update() by [caching references](#cache-references) in Start() or Awake()
 
-        UnityEngine.Object.GetComponent()
+    ```csharp
+    UnityEngine.Object.GetComponent()
+    ```
 
     c) It is good practice to instantiate all objects, if possible, at initialization and use [object pooling](#object-pooling) to recycle and re-use GameObjects throughout runtime of your application
 
-        UnityEngine.Object.Instantiate()
+    ```csharp
+    UnityEngine.Object.Instantiate()
+    ```
 
 3) **Avoid interfaces and virtual constructs**
 
@@ -179,17 +188,20 @@ Any repeating Unity callback functions (i.e Update) that are executed many times
 Generally, CPU-to-GPU performance comes down to the **draw calls** submitted to the graphics card. To improve performance, draw calls need to be strategically **a) reduced** or **b) restructured** for optimal results. Since draw calls themselves are resource-intensive, reducing them will reduce overall work required. Further, state changes between draw calls requires costly validation and translation steps in the graphics driver and thus, restructuring of your application's draw calls to limit state changes(i.e different materials, etc) can boost performance.
 
 Unity has a great article that gives an overview and dives into batching draw calls for their platform.
+
 - [Unity Draw Call Batching](https://docs.unity3d.com/Manual/DrawCallBatching.html)
 
-#### Single pass instanced rendering
+### Single pass instanced rendering
 
 Single Pass Instanced Rendering in Unity allows for draw calls for each eye to be reduced down to one instanced draw call. Due to cache coherency between two draw calls, there is also some performance improvement on the GPU as well.
 
 To enable this feature in your Unity Project
+
 1)  Open **Player XR Settings** (go to **Edit** > **Project Settings** > **Player** > **XR Settings**)
 2) Select **Single Pass Instanced** from the **Stereo Rendering Method** drop-down menu (**Virtual Reality Supported** checkbox must be checked)
 
 Read the following articles from Unity for details with this rendering approach.
+
 - [How to maximize AR and VR performance with advanced stereo rendering](https://blogs.unity3d.com/2017/11/21/how-to-maximize-ar-and-vr-performance-with-advanced-stereo-rendering/)
 - [Single Pass Instancing](https://docs.unity3d.com/Manual/SinglePassInstancing.html) 
 
@@ -221,7 +233,7 @@ Further, it is generally preferable to combine meshes into one GameObject where 
 
 ## GPU performance recommendations
 
-Learn more about [optimizing graphics rendering in Unity](https://unity3d.com/learn/tutorials/temas/performance-optimization/optimizing-graphics-rendering-unity-games) 
+Learn more about [optimizing graphics rendering in Unity](https://unity3d.com/learn/tutorials/temas/performance-optimization/optimizing-graphics-rendering-unity-games)
 
 ### Optimize depth buffer sharing
 
@@ -230,6 +242,7 @@ It is generally recommended to enable **Depth buffer sharing** under **Player XR
 ### Reduce poly count
 
 Polygon count is usually reduced by either
+
 1) Removing objects from a scene
 2) Asset decimation which reduces the number of polygons for a given mesh
 3) Implementing a [Level of Detail (LOD) System](https://docs.unity3d.com/Manual/LevelOfDetail.html) into your application which renders far away objects with lower-polygon version of the same geometry
@@ -249,7 +262,7 @@ An easy approximation to compare shaders in performance is to identify the avera
 
     ![Unity Standard Shader Operations](images/unity-standard-shader-compilation.png)
 
-#### Optmize pixel shaders
+#### Optimize pixel shaders
 
 Looking at the compiled statistic results using the method above, the [fragment shader](https://en.wikipedia.org/wiki/Shader#Pixel_shaders) will generally execute more operations than the [vertex shader](https://en.wikipedia.org/wiki/Shader#Vertex_shaders) on average. The fragment shader, also known as the pixel shader, is executed per pixel on the screen output while the vertex shader is only executed per-vertex of all meshes being drawn to the screen. 
 
@@ -277,21 +290,23 @@ Generally, overdraw can be mitigated by culling objects ahead of time before the
 
 Excessive memory allocation & deallocation operations can have adverse effects on your holographic application resulting in inconsistent performance, frozen frames, and other detrimental behavior. It is especially important to understand memory considerations when developing in Unity since memory management is controlled by the garbage collector.
 
-#### Garbage collection
+### Garbage collection
 
 Holographic apps will loose processing compute time to the garbage collector (GC) when the GC is activated to analyze objects that are no longer in scope during execution and their memory needs to be released so it can be made available for re-use. Constant allocations and de-allocations will generally require the garbage collector to run more frequently thus hurting performance and user experience.
 
 Unity has provided an excellent page that explains in detail how the garbage collector works and tips to write more efficient code in regards to memory management.
+
 - [Optimizing garbage collection in Unity games](https://unity3d.com/learn/tutorials/topics/performance-optimization/optimizing-garbage-collection-unity-games?playlist=44069)
 
 One of the most common practices that leads to excessive garbage collection is not caching references to components and classes in Unity development. Any references should be captured during Start() or Awake() and re-used in later functions such as Update() or LateUpdate().
 
 Other quick tips:
+
 - Use the [StringBuilder](https://docs.microsoft.com/dotnet/api/system.text.stringbuilder?view=netframework-4.7.2) C# class to dynamically build complex strings at runtime
 - Remove calls to Debug.Log() when no longer needed as they still execute in all build versions of an app
 - If your holographic app generally requires lots of memory, consider calling  [_**System.GC.Collect()**_](https://docs.microsoft.com/dotnet/api/system.gc.collect?view=netframework-4.7.2) during loading phases such as when presenting a loading or transition screen
 
-#### Object pooling
+### Object pooling
 
 Object pooling is a popular technique to reduce the cost of continuous allocations & deallocations of objects. This is done by allocating a large pool of identical objects and re-using inactive, available instances from this pool instead of constantly spawning and destroying objects over time. Object pools are great for re-useable components that have variable lifetime during an app.
 
@@ -304,6 +319,7 @@ You should consider starting your app with a smaller scene, then using *[SceneMa
 Remember that while the startup scene is loading the holographic splash screen will be displayed to the user.
 
 ## See also
+
 - [Optimizing graphics rendering in Unity games](https://unity3d.com/learn/tutorials/temas/performance-optimization/optimizing-graphics-rendering-unity-games?playlist=44069)
 - [Optimizing garbage collection in Unity games](https://unity3d.com/learn/tutorials/topics/performance-optimization/optimizing-garbage-collection-unity-games?playlist=44069)
 - [Physics Best Practices [Unity]](https://unity3d.com/learn/tutorials/topics/physics/physics-best-practices)

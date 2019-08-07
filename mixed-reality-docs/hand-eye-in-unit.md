@@ -8,21 +8,18 @@ ms.topic: article
 keywords: gestures, motion controllers, unity, gaze, input
 ---
 
-
-
 # Articulated Hand and Eye Tracking in Unity
 
 HoloLens 2 introduced some new exciting capabilities: articulated hands and eye tracking.
 
-The easiest way to leverage the new capability in Unity is through MRTK v2. There are also some example scenes to help you get started. 
+The easiest way to leverage the new capability in Unity is through MRTK v2. There are also some example scenes to help you get started.
 
 * [Get started with Articulated Hand  in MRTK v2](https://microsoft.github.io/MixedRealityToolkit-Unity/Documentation/InputSystem/HandTracking.html)
 * [Get started with Eye Tracking in MRTK v2](https://microsoft.github.io/MixedRealityToolkit-Unity/Documentation/EyeTracking/EyeTracking_Main.html)
 
-
 # Building Blocks supporting Hands, eyes and others in MRTK v2
 
-MRTK v2 provides a set of UI Controls and building blocks to help you accelerate your development. 
+MRTK v2 provides a set of UI Controls and building blocks to help you accelerate your development.
 
 |  [![Button](images/MRTK_Button_Main.png)](https://microsoft.github.io/MixedRealityToolkit-Unity/Documentation/README_Button.html) [Button](https://microsoft.github.io/MixedRealityToolkit-Unity/Documentation/README_Button.html) | [![Bounding Box](images/MRTK_BoundingBox_Main.png)](https://microsoft.github.io/MixedRealityToolkit-Unity/Documentation/README_BoundingBox.html) [Bounding Box](https://microsoft.github.io/MixedRealityToolkit-Unity/Documentation/README_BoundingBox.html) | [![Manipulation Handler](images/MRTK_Manipulation_Main.png)](https://microsoft.github.io/MixedRealityToolkit-Unity/Documentation/README_ManipulationHandler.html) [Manipulation Handler](https://microsoft.github.io/MixedRealityToolkit-Unity/Documentation/README_ManipulationHandler.html) |
 |:--- | :--- | :--- |
